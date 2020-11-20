@@ -5,11 +5,15 @@ function possiblyRelated(element, label) {
   const elementRect = element.getBoundingClientRect();
   const labelRect = label.getBoundingClientRect();
 
-  if (contains(elementRect, labelRect) || contains(labelRect, elementRect)) {
-    return isSwitch(element);
+  if (isSwitch(element)) {
+    return true;
   }
 
-  return labelRect.left <= (elementRect.left + (elementRect.width * 0.1)) && labelRect.top <= elementRect.bottom;
+  let isContainedOrContains = contains(elementRect, labelRect) || contains(labelRect, elementRect);
+
+  return !isContainedOrContains &&
+    labelRect.left <= (elementRect.left + (elementRect.width * 0.1)) &&
+    labelRect.top <= elementRect.bottom;
 }
 
 function getRelatedLabel(element) {
@@ -21,13 +25,17 @@ function getRelatedLabel(element) {
 }
 
 function isLabelWithHighConfidence(element, labelElement, distance) {
+  if (!isInput(element)) {
+    return false;
+  }
+
   if (labelElement && distance) {
     let labelRect = labelElement.getBoundingClientRect();
 
     let elementRect = element.getBoundingClientRect();
 
     // label contains switch
-    if (contains(labelRect, elementRect) && isSwitch(element) && distance <= 50) {
+    if (isSwitch(element) && (contains(labelRect, elementRect) || contains(elementRect, labelRect) || distance <= 50)) {
       return true;
     }
     // label on top of the element
@@ -43,13 +51,6 @@ function isLabelWithHighConfidence(element, labelElement, distance) {
 
 function getLabelForElement(element) {
   try {
-    if (!isInput(element)) {
-      return {
-        label: null,
-        highConfidence: false
-      };
-    }
-
     let relatedLabel = getRelatedLabel(element);
 
     if (relatedLabel) {
